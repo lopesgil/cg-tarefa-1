@@ -116,6 +116,19 @@
 
             // Se a primitiva tem vértices, adiciona uma bounding box a envolvendo paralela aos eixos x e y para otimizar a verificação
             for (var primitive of scene) {
+                if (primitive.hasOwnProperty('xform')) {
+                    if (primitive.hasOwnProperty('vertices')) {
+                        for (let vertice of primitive.vertices) {
+                            vertice[0] = primitive.xform[0][0] * vertice[0] +
+                                primitive.xform[0][1] * vertice[1] +
+                                primitive.xform[0][2] * 1;
+                            vertice[1] = primitive.xform[1][0] * vertice[0] +
+                                primitive.xform[1][1] * vertice[1] +
+                                primitive.xform[1][2] * 1;
+                        }
+                    }
+                }
+
                 if (primitive.hasOwnProperty('vertices')) {
                     let x1 = primitive.vertices[0][0];
                     let x2 = primitive.vertices[0][0];
