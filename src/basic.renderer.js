@@ -8,6 +8,34 @@
 
     /* ------------------------------------------------------------ */
 
+    // função auxiliar para verificar se um ponto está à esquerda,
+    // direita ou sobre uma reta que passa por outros dois pontos
+    function isLeft(p0, p1, p2) {
+        return ((p1[0] - p0[0]) * (p2[1] - p0[1]) - (p2[0] - p0[0]) * (p1[1] - p0[1]));
+    }
+
+    // verifica se um ponto está num polígono usando o algoritmo
+    // de winding number
+    function checkPolygon(x, y, polygon) {
+        let wn = 0;
+
+        for (let i = 0; i < polygon.vertices.length; i++) {
+            let currentVertex = polygon.vertices[i];
+            let nextVertex = i === polygon.vertices.length - 1 ? polygon.vertices[0] : polygon.vertices[i + 1];
+            if (currentVertex[1] <= y) {
+                if (nextVertex[1] > y) {
+                    if (isLeft(currentVertex, nextVertex, [x, y]) > 0) wn++;
+                }
+            } else {
+                if (nextVertex[1] <= y) {
+                    if (isLeft(currentVertex, nextVertex, [x, y]) < 0) wn--;
+                }
+            }
+        }
+
+        return wn !== 0;
+    }
+
     function checkTriangle(x, y, triangle) {
         // a função usa o método dos produtos vetoriais para determinar se
         // o ponto está no interior do triângulo
@@ -62,6 +90,8 @@
                 return checkTriangle(x, y, primitive);
             case 'circle':
                 return checkCircle(x, y, primitive);
+            case 'polygon':
+                return checkPolygon(x, y, primitive);
             default:
                 return false;
         }
