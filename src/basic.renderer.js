@@ -9,10 +9,38 @@
     /* ------------------------------------------------------------ */
 
     function checkTriangle(x, y, triangle) {
+        // a função usa o método dos produtos vetoriais para determinar se
+        // o ponto está no interior do triângulo
+
+        // calcula os vetores correspondentes às arestas
+        let edge0 = [triangle.vertices[1][0] - triangle.vertices[0][0],
+        triangle.vertices[1][1] - triangle.vertices[0][1]];
+        let edge1 = [triangle.vertices[2][0] - triangle.vertices[1][0],
+        triangle.vertices[2][1] - triangle.vertices[1][1]];
+        let edge2 = [triangle.vertices[0][0] - triangle.vertices[2][0],
+        triangle.vertices[0][1] - triangle.vertices[2][1]];
+
+        // calcula os vetores dos vértices ao ponto q
+        let q0 = [x - triangle.vertices[0][0],
+        y - triangle.vertices[0][1]];
+        let q1 = [x - triangle.vertices[1][0],
+        y - triangle.vertices[1][1]];
+        let q2 = [x - triangle.vertices[2][0],
+        y - triangle.vertices[2][1]];
+
+        // encontra a componente escalar do resultado dos produtos vetoriais
+        let k0 = ((edge0[0] * q0[1]) - (edge0[1] * q0[0]));
+        let k1 = ((edge1[0] * q1[1]) - (edge1[1] * q1[0]));
+        let k2 = ((edge2[0] * q2[1]) - (edge2[1] * q2[0]));
+
+        // se todos os sinais são positivos o ponto está dentro do triângulo
+        if ((k1 > 0 && k2 > 0 && k0 > 0) ||
+            (k1 < 0 && k2 < 0 && k0 < 0)) return true;
         return false;
     }
 
     function checkCircle(x, y, circle) {
+        // verificação usando equação implícita da circunferência
         if (((x - circle.center[0]) ** 2 + (y - circle.center[1]) ** 2) <= circle.radius ** 2) return true;
         return false;
     }
@@ -21,12 +49,14 @@
         // You should implement your inside test here for all shapes
         // for now, it only returns a false test
 
+        // se a primitiva possuir uma bounding box e o ponto estiver fora dela, o ponto é desconsiderado
         if (primitive.hasOwnProperty('bbox')) {
             if (!(primitive.bbox.x1 < x && primitive.bbox.x2 > x &&
                 primitive.bbox.y1 < y && primitive.bbox.y2 > y))
                 return false;
         }
 
+        // verificação em função do tipo de primitiva
         switch (primitive.shape) {
             case 'triangle':
                 return checkTriangle(x, y, primitive);
@@ -36,7 +66,6 @@
                 return false;
         }
 
-        return false
     }
 
 
@@ -55,6 +84,7 @@
 
             var preprop_scene = [];
 
+            // Se a primitiva tem vértices, adiciona uma bounding box a envolvendo paralela aos eixos x e y para otimizar a verificação
             for (var primitive of scene) {
                 if (primitive.hasOwnProperty('vertices')) {
                     let x1 = primitive.vertices[0][0];
