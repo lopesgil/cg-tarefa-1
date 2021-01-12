@@ -200,6 +200,26 @@
                     primitive.bbox = bbox;
                 }
 
+                // método análogo de bounding box para círculos triangularizados
+                if (primitive.hasOwnProperty('trig')) {
+                    let x1 = primitive.trig[0][0][0];
+                    let x2 = primitive.trig[0][0][0];
+                    let y1 = primitive.trig[0][0][1];
+                    let y2 = primitive.trig[0][0][1];
+
+                    for ( let triangle of primitive.trig ) {
+                        for ( let vertice of triangle ) {
+                            if (vertice[0] < x1) x1 = vertice[0];
+                            if (vertice[0] > x2) x2 = vertice[0];
+                            if (vertice[1] < y1) y1 = vertice[1];
+                            if (vertice[1] > y2) y2 = vertice[1];
+                        }
+                    }
+
+                    const bbox = { x1, x2, y1, y2 };
+                    primitive.bbox = bbox;
+                }
+
                 preprop_scene.push(primitive);
 
             }
