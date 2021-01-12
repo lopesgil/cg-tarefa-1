@@ -166,7 +166,7 @@
                                 primitive.xform[1][2] * 1;
                         }
                     } else {
-                        for ( let triangle of primitve.trig ) {
+                        for ( let triangle of primitive.trig ) {
                             for ( let point of triangle ) {
                                 let x = point[0];
                                 let y = point[1];
