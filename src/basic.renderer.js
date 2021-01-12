@@ -8,6 +8,28 @@
 
     /* ------------------------------------------------------------ */
 
+    // função auxiliar para triangularizar os círculos
+    function triangulation(circle, numTriangles) {
+        let points = [];
+        let triangles = [];
+
+        for ( let i = 0; i < numTriangles; i++) {
+            points.push([
+                circle.radius * Math.cos(i / numTriangles * 2 * Math.PI) + circle.center[0],
+                circle.radius * Math.sin(i / numTriangles * 2 * Math.PI) + circle.center[1]
+            ]);
+        }
+        for ( let i = 0; i < numTriangles; i++ ) {
+            triangles.push([
+                [ points[i][0], points[i][1] ],
+                [ ...points[(i+1) % numTriangles ] ],
+                [ circle.center[0], circle.center[1] ]
+            ]);
+        }
+
+        return triangles;
+    }
+
     // função auxiliar para verificar se um ponto está à esquerda,
     // direita ou sobre uma reta que passa por outros dois pontos
     function isLeft(p0, p1, p2) {
@@ -15,7 +37,8 @@
     }
 
     // verifica se um ponto está num polígono usando o algoritmo
-    // de winding number
+    // de winding number, de modo que funcione também com polígonos
+    // não-convexos
     function checkPolygon(x, y, polygon) {
         let wn = 0;
 
@@ -42,19 +65,19 @@
 
         // calcula os vetores correspondentes às arestas
         let edge0 = [triangle.vertices[1][0] - triangle.vertices[0][0],
-        triangle.vertices[1][1] - triangle.vertices[0][1]];
+                     triangle.vertices[1][1] - triangle.vertices[0][1]];
         let edge1 = [triangle.vertices[2][0] - triangle.vertices[1][0],
-        triangle.vertices[2][1] - triangle.vertices[1][1]];
+                     triangle.vertices[2][1] - triangle.vertices[1][1]];
         let edge2 = [triangle.vertices[0][0] - triangle.vertices[2][0],
-        triangle.vertices[0][1] - triangle.vertices[2][1]];
+                     triangle.vertices[0][1] - triangle.vertices[2][1]];
 
         // calcula os vetores dos vértices ao ponto q
         let q0 = [x - triangle.vertices[0][0],
-        y - triangle.vertices[0][1]];
+                  y - triangle.vertices[0][1]];
         let q1 = [x - triangle.vertices[1][0],
-        y - triangle.vertices[1][1]];
+                  y - triangle.vertices[1][1]];
         let q2 = [x - triangle.vertices[2][0],
-        y - triangle.vertices[2][1]];
+                  y - triangle.vertices[2][1]];
 
         // encontra a componente escalar do resultado dos produtos vetoriais
         let k0 = ((edge0[0] * q0[1]) - (edge0[1] * q0[0]));
@@ -67,9 +90,17 @@
         return false;
     }
 
+    // usa a verificação de triângulos para testar o
+    // círculo triangularizado
     function checkCircle(x, y, circle) {
-        // verificação usando equação implícita da circunferência
-        if (((x - circle.center[0]) ** 2 + (y - circle.center[1]) ** 2) <= circle.radius ** 2) return true;
+        for ( let trig of circle.trig ) {
+            let triangle = {
+                vertices: trig,
+            }
+
+            if ( checkTriangle(x, y, triangle) === true ) return true;
+        }
+
         return false;
     }
 
@@ -80,7 +111,7 @@
         // se a primitiva possuir uma bounding box e o ponto estiver fora dela, o ponto é desconsiderado
         if (primitive.hasOwnProperty('bbox')) {
             if (!(primitive.bbox.x1 < x && primitive.bbox.x2 > x &&
-                primitive.bbox.y1 < y && primitive.bbox.y2 > y))
+                   primitive.bbox.y1 < y && primitive.bbox.y2 > y))
                 return false;
         }
 
@@ -98,7 +129,6 @@
 
     }
 
-
     function Screen(width, height, scene) {
         this.width = width;
         this.height = height;
@@ -114,21 +144,45 @@
 
             var preprop_scene = [];
 
-            // Se a primitiva tem vértices, adiciona uma bounding box a envolvendo paralela aos eixos x e y para otimizar a verificação
             for (var primitive of scene) {
+                // se a primitiva for um círculo, trangulariza para
+                // facilitar a aplicação da transformação
+                if ( primitive.shape === 'circle' ) {
+                    primitive.trig = triangulation(primitive, 100);
+                }
+
+                // aplica as transformações às primitivas que as têm
                 if (primitive.hasOwnProperty('xform')) {
                     if (primitive.hasOwnProperty('vertices')) {
                         for (let vertice of primitive.vertices) {
-                            vertice[0] = primitive.xform[0][0] * vertice[0] +
-                                primitive.xform[0][1] * vertice[1] +
+                            let x = vertice[0];
+                            let y = vertice[1];
+
+                            vertice[0] = primitive.xform[0][0] * x +
+                                primitive.xform[0][1] * y +
                                 primitive.xform[0][2] * 1;
-                            vertice[1] = primitive.xform[1][0] * vertice[0] +
-                                primitive.xform[1][1] * vertice[1] +
+                            vertice[1] = primitive.xform[1][0] * x +
+                                primitive.xform[1][1] * y +
                                 primitive.xform[1][2] * 1;
+                        }
+                    } else {
+                        for ( let triangle of primitve.trig ) {
+                            for ( let point of triangle ) {
+                                let x = point[0];
+                                let y = point[1];
+
+                                point[0] = primitive.xform[0][0] * x +
+                                    primitive.xform[0][1] * y +
+                                    primitive.xform[0][2] * 1;
+                                point[1] = primitive.xform[1][0] * x +
+                                    primitive.xform[1][1] * y +
+                                    primitive.xform[1][2] * 1;
+                            }
                         }
                     }
                 }
 
+                // Se a primitiva tem vértices, adiciona uma bounding box a envolvendo paralela aos eixos x e y para otimizar a verificação
                 if (primitive.hasOwnProperty('vertices')) {
                     let x1 = primitive.vertices[0][0];
                     let x2 = primitive.vertices[0][0];
@@ -202,7 +256,7 @@
             nj.images.save(this.image, $image);
         }
     }
-    );
+                 );
 
     exports.Screen = Screen;
 
